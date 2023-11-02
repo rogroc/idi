@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta WHOIS de Domini</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.6/xlsx.full.min.js"></script>
+    <script>
+        function convertirDataExcel(dataString) {
+            var parts = dataString.split("T");
+            var dataPart = parts[0];
+            var horaPart = parts[1];
+            var dataParts = dataPart.split("-");
+            var any = parseInt(dataParts[0]);
+            var mes = parseInt(dataParts[1]) - 1;
+            var dia = parseInt(dataParts[2]);
+            var horaParts = horaPart.split(':');
+            var hora = parseInt(horaParts[0]);
+            var dataExcel = new Date(any, mes, dia, hora);
+            var dataExcelNum = (dataExcel - new Date('1899-12-30T00:00')) / (24 * 60 * 60 * 1000);
+            return dataExcelNum;
+        }
+
+function convertirDataExcelANormal(dataExcelNum) {
+    var dataExcel = (dataExcelNum - (25567 + 1)); // Cal restar 1 per ajustar la zona horària
+    var data = new Date(dataExcel * 86400 * 1000); // Multiplicat per milisegons en un dia
+    var dia = data.getDate().toString().padStart(2, '0');
+    var mes = (data.getMonth() + 1).toString().padStart(2, '0'); // S'afegeix 1 ja que els mesos comencen per zero
+    var any = data.getFullYear();
+
+    var hora = data.getHours().toString().padStart(2, '0');
+    var minuts = data.getMinutes().toString().padStart(2, '0');
+
+    var dataAmbHora = dia + '/' + mes + '/' + any + ' ' + hora + ':' + minuts;
+
+    return dataAmbHora;
+}
+
+
+        function consultarWHOIS(domini, resultatContenidor, caducitat) {
+            fetch('https://api.whois.vu/?q=' + domini)
+                .then(response => response.json())
+                .then(data => {
+                    var informacioWHOIS = data;
+                    var disponible = informacioWHOIS.available;
+                    var whois = informacioWHOIS.whois;
+                    var dataCaducitat = "";
+                    var dataCreacio = "";
+                    var organitzacioRegistrant = "";
+                    var dataExcelCaducitat = "";
+
+                    if (whois) {
+                        var linies = whois.split("\n");
+                        for (var i = 0; i < linies.length; i++) {
+                            if (linies[i].includes("Registry Expiry Date:")) {
+                                dataCaducitat = linies[i].split(":")[1].trim();
+                            }
+                            if (linies[i].includes("Creation Date:")) {
+                                dataCreacio = linies[i].split(":")[1].trim();
+                            }
+                            if (linies[i].includes("Registrant Organization:")) {
+                                organitzacioRegistrant = linies[i].split(":")[1].trim();
+                            }
+                        }
+                    }
+
+                    // Crear una taula per mostrar les dades
+                    var table = $('#resultatTaula').DataTable();
+                    var rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant];
+                    table.row.add(rowData).draw();
+                })
+                .catch(error => {
+                    resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
+                });
+        }
+
+        function carregarArxiu() {
+            const today = new Date();
+            const avui = (today - new Date('1899-12-30')) / (24 * 60 * 60 * 1000);
+
+            var input = document.createElement('input');
+            input.type = 'file';
+
+            input.onchange = function (e) {
+                var arxiu = e.target.files[0];
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var contingutArxiu = e.target.result;
+                    var excel = XLSX.read(contingutArxiu, { type: 'binary' });
+
+                    var table = $('#resultatTaula').DataTable();
+                    var rows = [];
+
+                    var fullData = XLSX.utils.sheet_to_json(excel.Sheets[excel.SheetNames[0]], {
+    header: 13, 
+    range: 13 
+});
+
+                    var excelFiltrat = fullData
+                        .filter(function (row) {
+                            const dataFiVigenciaDret = row["Data fi vigència dret"];
+                            return row["Catàleg d'inventari"] === "Nom de domini" && 
+                                row["Estat"] === "Alta" && 
+                                dataFiVigenciaDret < avui &&
+                                row["Gestionat pel CTTI"] === "No" &&
+                                row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA";
+                        });
+
+                    excelFiltrat.forEach(function (row, index) {
+if (index < 10) {
+                        var resultatContenidor = document.createElement("div");
+                        document.body.appendChild(resultatContenidor);
+                        resultatContenidor.id = "resultat-" + row['Denominació'];
+                        var caducitat = convertirDataExcelANormal(row['Data fi vigència dret']);
+                        consultarWHOIS(row['Denominació'], resultatContenidor, caducitat);
+
+
+}
+                    });
+
+                    table.rows.add(rows).draw();
+                };
+
+                reader.readAsBinaryString(arxiu);
+            };
+
+            input.click();
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Llegeix arxiu XLSX</h1>
+    </header>
+
+    <main>
+        <button onclick="carregarArxiu()">Carregar Arxiu XLSX</button>
+    </main>
+
+    <div id="resultatContenidor">
+        <table id="resultatTaula" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Domini</th>
+                    <th>Disponibilitat</th>
+                    <th>Data de venciment registre</th>
+                    <th>Data de venciment excel</th>
+                    <th>Data de creació</th>
+                    <th>Organització del Registrant</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</body>
+</html>
