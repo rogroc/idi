@@ -24,7 +24,7 @@
         }
 
 function convertirDataExcelANormal(dataExcelNum) {
-    var dataExcel = (dataExcelNum - (25567 + 1)); // Cal restar 1 per ajustar la zona horària
+    var dataExcel = (dataExcelNum - (25567 + 2)); // Cal restar 1 per ajustar la zona horària
     var data = new Date(dataExcel * 86400 * 1000); // Multiplicat per milisegons en un dia
     var dia = data.getDate().toString().padStart(2, '0');
     var mes = (data.getMonth() + 1).toString().padStart(2, '0'); // S'afegeix 1 ja que els mesos comencen per zero
