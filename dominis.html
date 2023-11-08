@@ -46,8 +46,6 @@ async function mostrarAvis() {
         OrganitzacioRegistrant: row[5]
     }));
 
-    console.log(dataTableJSON);
-
     const ws = XLSX.utils.json_to_sheet(dataTableJSON);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dades");
@@ -90,10 +88,10 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat) {
             const linies = whois.split("\n");
             linies.forEach(linea => {
                 if (linea.includes("Registry Expiry Date:")) {
-                    dataCaducitat = linea.split(":")[1].trim();
+                    dataCaducitat = linea.split(":")[1].trim().split("T")[0];
                 }
                 if (linea.includes("Creation Date:")) {
-                    dataCreacio = linea.split(":")[1].trim();
+                    dataCreacio = linea.split(":")[1].trim().split("T")[0];
                 }
                 if (linea.includes("Registrant Organization:")) {
                     organitzacioRegistrant = linea.split(":")[1].trim();
@@ -102,7 +100,7 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat) {
         }
 
         const table = $('#resultatTaula').DataTable();
-        const rowData = [domini, disponible, dataCaducitat.split("T")[0], caducitat, dataCreacio.split("T")[0], organitzacioRegistrant];
+        const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant];
         table.row.add(rowData).draw();
     } catch (error) {
         resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
@@ -139,7 +137,6 @@ function carregarArxiu() {
                     row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA";
             });
 
-            console.log(excelFiltrat.length);
             excelFiltrat.forEach((row, index) => {
                 if (index) {
                     const resultatContenidor = document.createElement("div");
