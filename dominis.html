@@ -194,25 +194,6 @@ mostrarAvis()
             input.click();
         }
 
-        function toggleDescarregarButton() {
-            var table = $('#resultatTaula').DataTable();
-            var totalRegistres = table.rows().count();
-            var descarregarButton = document.getElementById('descarregarXLSX');
-
-            // Habilitar el botó només quan tots els registres estiguin plens
-            if (totalRegistres > 0 && totalRegistres === excelFiltrat.length) {
-                descarregarButton.removeAttribute('disabled');
-            } else {
-                descarregarButton.setAttribute('disabled', 'disabled');
-            }
-        }
-
-        function descarregarXLSX() {
-            // Implementa la descàrrega de l'arxiu XLSX aquí
-            // Pots utilitzar la funció createJSONFromDataTable per això
-            createJSONFromDataTable();
-        }
-
     </script>
 </head>
 <body>
@@ -222,7 +203,6 @@ mostrarAvis()
 
     <main>
         <button onclick="carregarArxiu()">Carregar Arxiu XLSX</button>
-        <button id="descarregarXLSX" onclick="descarregarXLSX()" disabled>Descarregar XLSX</button>
     </main>
     <br>
     <div id="resultatContenidor">
