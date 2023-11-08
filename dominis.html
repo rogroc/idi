@@ -9,49 +9,6 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.6/xlsx.full.min.js"></script>
     <script>
 
-async function mostrarAvis() {
-    const table = $('#resultatTaula').DataTable();
-    let dataCarregada = false;
-
-    async function waitForDataLoaded() {
-        setTimeout(() => {
-            if (!dataCarregada) {
-                const rowIndex = table.row().count();
-                if (rowIndex > 0) {
-                    table.cell(rowIndex - 1, 5).data("ERROR").draw();
-                }
-            }
-        }, 10000);
-
-        while (true) {
-            const totalRegistres = table.rows().count();
-            if (totalRegistres === excelFiltrat.length - 1) {
-                dataCarregada = true;
-                break;
-            } else {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-    }
-
-    await waitForDataLoaded();
-    const data = table.rows().data().toArray();
-
-    const dataTableJSON = data.map(row => ({
-        Domini: row[0],
-        Disponibilitat: row[1],
-        DataVencimentWhois: row[2],
-        DataVencimentExcel: row[3],
-        DataCreacioWhois: row[4],
-        OrganitzacioRegistrant: row[5]
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dataTableJSON);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dades");
-    XLSX.writeFile(wb, 'dades.xlsx');
-}
-
 function convertirDataExcel(dataString) {
     const [dataPart, horaPart] = dataString.split("T");
     const [any, mes, dia] = dataPart.split("-").map(Number);
@@ -71,40 +28,6 @@ function convertirDataExcelANormal(dataExcelNum) {
     const minuts = data.getMinutes().toString().padStart(2, '0');
     const dataAmbHora = `${any}-${mes}-${dia}`;
     return dataAmbHora;
-}
-
-async function consultarWHOIS(domini, resultatContenidor, caducitat) {
-    try {
-        const response = await fetch('https://api.whois.vu/?q=' + domini);
-        const informacioWHOIS = await response.json();
-        const disponible = informacioWHOIS.available;
-        const whois = informacioWHOIS.whois;
-        let dataCaducitat = "";
-        let dataCreacio = "";
-        let organitzacioRegistrant = "";
-        let dataExcelCaducitat = "";
-
-        if (whois) {
-            const linies = whois.split("\n");
-            linies.forEach(linea => {
-                if (linea.includes("Registry Expiry Date:")) {
-                    dataCaducitat = linea.split(":")[1].trim().split("T")[0];
-                }
-                if (linea.includes("Creation Date:")) {
-                    dataCreacio = linea.split(":")[1].trim().split("T")[0];
-                }
-                if (linea.includes("Registrant Organization:")) {
-                    organitzacioRegistrant = linea.split(":")[1].trim();
-                }
-            });
-        }
-
-        const table = $('#resultatTaula').DataTable();
-        const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant];
-        table.row.add(rowData).draw();
-    } catch (error) {
-        resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
-    }
 }
 
 function carregarArxiu() {
@@ -155,6 +78,83 @@ function carregarArxiu() {
     };
 
     input.click();
+}
+
+async function consultarWHOIS(domini, resultatContenidor, caducitat) {
+    try {
+        const response = await fetch('https://api.whois.vu/?q=' + domini);
+        const informacioWHOIS = await response.json();
+        const disponible = informacioWHOIS.available;
+        const whois = informacioWHOIS.whois;
+        let dataCaducitat = "";
+        let dataCreacio = "";
+        let organitzacioRegistrant = "";
+        let dataExcelCaducitat = "";
+
+        if (whois) {
+            const linies = whois.split("\n");
+            linies.forEach(linea => {
+                if (linea.includes("Registry Expiry Date:")) {
+                    dataCaducitat = linea.split(":")[1].trim().split("T")[0];
+                }
+                if (linea.includes("Creation Date:")) {
+                    dataCreacio = linea.split(":")[1].trim().split("T")[0];
+                }
+                if (linea.includes("Registrant Organization:")) {
+                    organitzacioRegistrant = linea.split(":")[1].trim();
+                }
+            });
+        }
+
+        const table = $('#resultatTaula').DataTable();
+        const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant];
+        table.row.add(rowData).draw();
+    } catch (error) {
+        resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
+    }
+}
+
+async function mostrarAvis() {
+    const table = $('#resultatTaula').DataTable();
+    let dataCarregada = false;
+
+    async function waitForDataLoaded() {
+        setTimeout(() => {
+            if (!dataCarregada) {
+                const rowIndex = table.row().count();
+                if (rowIndex > 0) {
+                    table.cell(rowIndex - 1, 5).data("ERROR").draw();
+                }
+            }
+        }, 10000);
+
+        while (true) {
+            const totalRegistres = table.rows().count();
+            if (totalRegistres === excelFiltrat.length - 1) {
+                dataCarregada = true;
+                break;
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+    }
+
+    await waitForDataLoaded();
+    const data = table.rows().data().toArray();
+
+    const dataTableJSON = data.map(row => ({
+        Domini: row[0],
+        Disponibilitat: row[1],
+        DataVencimentWhois: row[2],
+        DataVencimentExcel: row[3],
+        DataCreacioWhois: row[4],
+        OrganitzacioRegistrant: row[5]
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataTableJSON);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dades");
+    XLSX.writeFile(wb, 'dades.xlsx');
 }
 
     </script>
