@@ -8,6 +8,70 @@
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.15.6/xlsx.full.min.js"></script>
     <script>
+
+async function mostrarAvis() {
+    var table = $('#resultatTaula').DataTable();
+    var dataCarregada = false; // Variable per seguiment de les dades carregades
+
+    // Funció asincrònica per comprovar si les dades estan carregades
+    async function waitForDataLoaded() {
+        // Estableix un temporitzador de 10 segons
+        setTimeout(function () {
+            if (!dataCarregada) {
+                // Si no s'han carregat les dades al cap de 10 segons, mostra "ERROR"
+                var rowIndex = table.row().count();
+                if (rowIndex > 0) {
+                    // Afegeix "ERROR" a la columna "OrganitzacioRegistrant"
+                    table.cell(rowIndex - 1, 5).data("ERROR").draw();
+                }
+            }
+        }, 10000); // 10 segons en milisegons
+
+        while (true) {
+            var totalRegistres = table.rows().count();
+            if (totalRegistres === excelFiltrat.length-1) {
+                dataCarregada = true; // Marca que les dades s'han carregat
+                break;
+            } else {
+                // Espera 100 ms abans de comprovar-ho de nou
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+    }
+
+    await waitForDataLoaded();
+
+    // Obtener los datos de la DataTable
+    var data = table.rows().data().toArray();
+
+    // Convertir los datos a un objeto JavaScript
+    var dataTableJSON = data.map(function (row) {
+        return {
+            Domini: row[0],
+            Disponibilitat: row[1],
+            DataVencimentWhois: row[2],
+            DataVencimentExcel: row[3],
+            DataCreacioWhois: row[4],
+            OrganitzacioRegistrant: row[5]
+        };
+    });
+
+console.log(dataTableJSON);
+
+    // Ahora, dataTableJSON contiene los datos de la DataTable en formato JSON
+    console.log(dataTableJSON);
+
+    // Crear un objecte de tipus XLSX
+    const ws = XLSX.utils.json_to_sheet(dataTableJSON);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dades");
+
+    // Generar un arxiu XLSX en format de full de càlcul
+    XLSX.writeFile(wb, 'dades.xlsx');
+}
+
+
+
         function convertirDataExcel(dataString) {
             var parts = dataString.split("T");
             var dataPart = parts[0];
@@ -23,21 +87,17 @@
             return dataExcelNum;
         }
 
-function convertirDataExcelANormal(dataExcelNum) {
-    var dataExcel = (dataExcelNum - (25567 + 2)); // Cal restar 1 per ajustar la zona horària
-    var data = new Date(dataExcel * 86400 * 1000); // Multiplicat per milisegons en un dia
-    var dia = data.getDate().toString().padStart(2, '0');
-    var mes = (data.getMonth() + 1).toString().padStart(2, '0'); // S'afegeix 1 ja que els mesos comencen per zero
-    var any = data.getFullYear();
-
-    var hora = data.getHours().toString().padStart(2, '0');
-    var minuts = data.getMinutes().toString().padStart(2, '0');
-
-    var dataAmbHora = dia + '/' + mes + '/' + any + ' ' + hora + ':' + minuts;
-
-    return dataAmbHora;
-}
-
+        function convertirDataExcelANormal(dataExcelNum) {
+            var dataExcel = (dataExcelNum - (25567 + 2)); // Cal restar 1 per ajustar la zona horària
+            var data = new Date(dataExcel * 86400 * 1000); // Multiplicat per milisegons en un dia
+            var dia = data.getDate().toString().padStart(2, '0');
+            var mes = (data.getMonth() + 1).toString().padStart(2, '0'); // S'afegeix 1 ja que els mesos comencen per zero
+            var any = data.getFullYear();
+            var hora = data.getHours().toString().padStart(2, '0');
+            var minuts = data.getMinutes().toString().padStart(2, '0');
+            var dataAmbHora = any + '-' + mes + '-' + dia;
+            return dataAmbHora;
+        }
 
         function consultarWHOIS(domini, resultatContenidor, caducitat) {
             fetch('https://api.whois.vu/?q=' + domini)
@@ -68,8 +128,11 @@ function convertirDataExcelANormal(dataExcelNum) {
 
                     // Crear una taula per mostrar les dades
                     var table = $('#resultatTaula').DataTable();
-                    var rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant];
+                    var rowData = [domini, disponible, dataCaducitat.split("T")[0], caducitat, dataCreacio.split("T")[0], organitzacioRegistrant];
                     table.row.add(rowData).draw();
+
+
+
                 })
                 .catch(error => {
                     resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
@@ -95,33 +158,34 @@ function convertirDataExcelANormal(dataExcelNum) {
                     var rows = [];
 
                     var fullData = XLSX.utils.sheet_to_json(excel.Sheets[excel.SheetNames[0]], {
-    header: 13, 
-    range: 13 
-});
-
-                    var excelFiltrat = fullData
-                        .filter(function (row) {
-                            const dataFiVigenciaDret = row["Data fi vigència dret"];
-                            return row["Catàleg d'inventari"] === "Nom de domini" && 
-                                row["Estat"] === "Alta" && 
-                                dataFiVigenciaDret < avui &&
-                                row["Gestionat pel CTTI"] === "No" &&
-                                row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA";
-                        });
-
-                    excelFiltrat.forEach(function (row, index) {
-if (index < 10) {
-                        var resultatContenidor = document.createElement("div");
-                        document.body.appendChild(resultatContenidor);
-                        resultatContenidor.id = "resultat-" + row['Denominació'];
-                        var caducitat = convertirDataExcelANormal(row['Data fi vigència dret']);
-                        consultarWHOIS(row['Denominació'], resultatContenidor, caducitat);
-
-
-}
+                        header: 13,
+                        range: 13
                     });
 
-                    table.rows.add(rows).draw();
+                    excelFiltrat = fullData.filter(function (row) {
+                        const dataFiVigenciaDret = row["Data fi vigència dret"];
+                        return row["Catàleg d'inventari"] === "Nom de domini" &&
+                            row["Estat"] === "Alta" &&
+                            dataFiVigenciaDret < avui &&
+                            row["Gestionat pel CTTI"] === "No" &&
+			    row["Denominació"].split(".")[1] !== "es" &&
+                            row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA";
+                    });
+console.log(excelFiltrat.length);
+excelFiltrat.forEach(function (row, index) {
+    if (index) {
+        var resultatContenidor = document.createElement("div");
+        document.body.appendChild(resultatContenidor);
+        resultatContenidor.id = "resultat-" + row['Denominació'];
+        var caducitat = convertirDataExcelANormal(row['Data fi vigència dret']);
+        consultarWHOIS(row['Denominació'], resultatContenidor, caducitat);
+    }
+});
+
+table.rows.add(rows).draw();
+
+mostrarAvis() 
+
                 };
 
                 reader.readAsBinaryString(arxiu);
@@ -129,6 +193,26 @@ if (index < 10) {
 
             input.click();
         }
+
+        function toggleDescarregarButton() {
+            var table = $('#resultatTaula').DataTable();
+            var totalRegistres = table.rows().count();
+            var descarregarButton = document.getElementById('descarregarXLSX');
+
+            // Habilitar el botó només quan tots els registres estiguin plens
+            if (totalRegistres > 0 && totalRegistres === excelFiltrat.length) {
+                descarregarButton.removeAttribute('disabled');
+            } else {
+                descarregarButton.setAttribute('disabled', 'disabled');
+            }
+        }
+
+        function descarregarXLSX() {
+            // Implementa la descàrrega de l'arxiu XLSX aquí
+            // Pots utilitzar la funció createJSONFromDataTable per això
+            createJSONFromDataTable();
+        }
+
     </script>
 </head>
 <body>
@@ -138,6 +222,7 @@ if (index < 10) {
 
     <main>
         <button onclick="carregarArxiu()">Carregar Arxiu XLSX</button>
+        <button id="descarregarXLSX" onclick="descarregarXLSX()" disabled>Descarregar XLSX</button>
     </main>
     <br>
     <div id="resultatContenidor">
