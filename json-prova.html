@@ -15,23 +15,19 @@
             ]
         };
 
-        // Converteix l'objecte JSON a una cadena JSON
-        var dadesJSONString = JSON.stringify(dadesJSON);
-
         // Configura la capçalera per indicar que es retorna JSON
         var capcalera = new Headers({
             'Content-Type': 'application/json'
         });
 
         // Crea una resposta amb la cadena JSON
-        var resposta = new Response(dadesJSONString, { headers: capcalera });
+        var resposta = new Response(JSON.stringify(dadesJSON), { headers: capcalera });
 
-        // Accedeix a l'element de la pàgina on vols mostrar les dades
-        var contingut = document.getElementById('contingut');
-
-        // Mostra les dades JSON a la pantalla
-        resposta.json().then(function(data) {
-            contingut.innerHTML = JSON.stringify(data, null, 2);
+        // Configura una ruta a la teva "API" (en aquest cas, /api/dades)
+        self.addEventListener('fetch', function(event) {
+            if (event.request.url.endsWith('/api/dades')) {
+                event.respondWith(resposta);
+            }
         });
     </script>
 </body>
