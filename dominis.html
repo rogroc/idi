@@ -79,57 +79,65 @@ const creacio = convertirDataExcelANormal(row['Data inici vigència dret']);
             input.click();
         }
 
-        async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio) {
-            try {
-                const response = await fetch('https://api.whois.vu/?q=' + domini);
-                const informacioWHOIS = await response.json();
-                const disponible = informacioWHOIS.available;
-                const whois = informacioWHOIS.whois;
-                let dataCaducitat = "";
-                let dataCreacio = "";
-                let organitzacioRegistrant = "";
-                let dataExcelCaducitat = "";
-		let website = "";
-                let estat = "";
+async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio) {
+    try {
+        const response = await fetch('https://api.whois.vu/?q=' + domini);
+        const informacioWHOIS = await response.json();
+        const disponible = informacioWHOIS.available;
+        const whois = informacioWHOIS.whois;
+        let dataCaducitat = "";
+        let dataCreacio = "";
+        let organitzacioRegistrant = "";
+        let dataExcelCaducitat = "";
+        let website = "";
+        let estat = "";
+        let trobatCreacio = false;
+        let trobatWebsite = false;
+        let trobatDetails = false;
 
-                if (whois) {
-                    const linies = whois.split("\n");
-                    linies.forEach(linea => {
-                        if (linea.includes("Registry Expiry Date:")) {
-                            dataCaducitat = linea.split(":")[1].trim().split("T")[0];
-                        }
-                        if (linea.includes("Creation Date:")) {
-                            dataCreacio = linea.split(":")[1].trim().split("T")[0];
-                        }
-                        if (linea.includes("Registrant Organization:")) {
-                            organitzacioRegistrant = linea.split(":")[1].trim();
-                        }
-if (linea.includes("Website:") || linea.includes("Registrar URL:")) {
-    website = linea.split(": ")[1].trim();
-}
-if (linea.includes("Details:")) {
-                            website = linea.split('"')[1].trim();
-                        }
-                    });
+        if (whois) {
+            const linies = whois.split("\n");
+            linies.forEach(linea => {
+                if (linea.includes("Registry Expiry Date:")) {
+                    dataCaducitat = linea.split(":")[1].trim().split("T")[0];
                 }
-
-                if (disponible === "yes") {
-                    estat = "Baixa";
-                } else if (dataCaducitat === "") {
-                    estat = "Falta informació";
-                } else if (convertirDataExcel(dataCaducitat) > convertirDataExcel(caducitat)) {
-                    estat = "Renovat";
-                } else {
-                    estat = "Caducat";
+                if (!trobatCreacio && linea.includes("Creation Date:")) {
+                    dataCreacio = linea.split(":")[1].trim().split("T")[0];
+                    trobatCreacio = true;
                 }
-
-                const table = $('#resultatTaula').DataTable();
-                const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, creacio, organitzacioRegistrant, website, estat];
-                table.row.add(rowData).draw();
-            } catch (error) {
-                resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
-            }
+                if (linea.includes("Registrant Organization:")) {
+                    organitzacioRegistrant = linea.split(":")[1].trim();
+                }
+                if (!trobatWebsite && (linea.includes("Website:") || linea.includes("Registrar URL:"))) {
+                    website = linea.split(": ")[1].trim();
+                    trobatWebsite = true;
+                }
+                if (!trobatDetails && linea.includes("Details:")) {
+                    website = linea.split('"')[1].trim();
+                    trobatDetails = true;
+                }
+            });
         }
+        
+        if (disponible === "yes") {
+            estat = "Baixa";
+        } else if (dataCaducitat === "") {
+            estat = "Falta informació";
+        } else if (convertirDataExcel(dataCreacio) !== convertirDataExcel(creacio)) {
+            estat = "Data creació no coincident";
+        } else if (convertirDataExcel(dataCaducitat) > convertirDataExcel(caducitat)) {
+            estat = "Renovat";
+        } else {
+            estat = "Caducat";
+        }
+
+        const table = $('#resultatTaula').DataTable();
+        const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, creacio, organitzacioRegistrant, website, estat];
+        table.row.add(rowData).draw();
+    } catch (error) {
+        resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
+    }
+}
 
         async function mostrarAvis() {
             const table = $('#resultatTaula').DataTable();
