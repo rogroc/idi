@@ -88,6 +88,7 @@
                 let dataCreacio = "";
                 let organitzacioRegistrant = "";
                 let dataExcelCaducitat = "";
+		let website = "";
                 let estat = "";
 
                 if (whois) {
@@ -101,6 +102,12 @@
                         }
                         if (linea.includes("Registrant Organization:")) {
                             organitzacioRegistrant = linea.split(":")[1].trim();
+                        }
+if (linea.includes("Website:") || linea.includes("Registrar URL:")) {
+    website = linea.split(": ")[1].trim();
+}
+if (linea.includes("Details:")) {
+                            website = linea.split('"')[1].trim();
                         }
                     });
                 }
@@ -116,7 +123,7 @@
                 }
 
                 const table = $('#resultatTaula').DataTable();
-                const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant, estat];
+                const rowData = [domini, disponible, dataCaducitat, caducitat, dataCreacio, organitzacioRegistrant, website, estat];
                 table.row.add(rowData).draw();
             } catch (error) {
                 resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
@@ -146,7 +153,8 @@
                 DataVencimentExcel: row[3],
                 DataCreacioWhois: row[4],
                 OrganitzacioRegistrant: row[5],
-                Estat: row[6]
+		WebAgent: row[6],
+                Estat: row[7]
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataTableJSON);
@@ -174,7 +182,8 @@
                     <th>Data venciment whois</th>
                     <th>Data venciment excel</th>
                     <th>Data de creació whois</th>
-                    <th>Organització del Registrant</th>
+                    <th>Organització del registrant</th>
+		    <th>Web agent</th>
                     <th>Estat</th>
                 </tr>
             </thead>
