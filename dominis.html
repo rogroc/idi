@@ -28,9 +28,18 @@
             return dataAmbHora;
         }
 
+function restarDosMesosExcel(dataExcelNum) {
+    const fa3mesos = (today - new Date('1900-03-30')) / (24 * 60 * 60 * 1000)
+    return fa3mesos;
+}
+
+const today = new Date();
+const avui = (today - new Date('1899-12-30')) / (24 * 60 * 60 * 1000);
+
+console.log(convertirDataExcelANormal(avui));
+console.log(convertirDataExcelANormal(restarDosMesosExcel(avui)));
+
         function carregarArxiu() {
-            const today = new Date();
-            const avui = (today - new Date('1899-12-30')) / (24 * 60 * 60 * 1000);
 
             const input = document.createElement('input');
             input.type = 'file';
@@ -56,7 +65,7 @@
                             dataFiVigenciaDret < avui &&
                             row["Gestionat pel CTTI"] === "No" &&
                             row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA" &&
-			    !(row["Denominació"].includes(".eu") && dataFiVigenciaDret < restarDosMesosExcel(avui));
+			    !(row["Denominació"].includes(".eu") && dataFiVigenciaDret < restarDosMesosExcel(avui)) 
                     });
 
                     excelFiltrat.forEach((row, index) => {
