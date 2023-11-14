@@ -65,7 +65,14 @@ console.log(convertirDataExcelANormal(restarDosMesosExcel(avui)));
                             dataFiVigenciaDret < avui &&
                             row["Gestionat pel CTTI"] === "No" &&
                             row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA" &&
-			    !(row["Denominació"].includes(".eu") && dataFiVigenciaDret < restarDosMesosExcel(avui)) 
+			    !(
+            (row["Denominació"].includes(".eu") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
+            (row["Denominació"].includes(".it") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
+            (row["Denominació"].includes(".de") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
+            (row["Denominació"].includes(".fr") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
+            (row["Denominació"].includes(".eu") && dataFiVigenciaDret > restarDosMesosExcel(avui))
+            // Afegir més condicions si és necessari
+        ); 
                     });
 
                     excelFiltrat.forEach((row, index) => {
@@ -129,6 +136,8 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio) {
             });
         }
         
+	// Creació del camp "Estat"
+
         if (disponible === "yes") {
             estat = "Baixa";
         } else if (dataCaducitat === "") {
