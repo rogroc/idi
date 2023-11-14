@@ -55,7 +55,8 @@
                             row["Estat"] === "Alta" &&
                             dataFiVigenciaDret < avui &&
                             row["Gestionat pel CTTI"] === "No" &&
-                            row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA";
+                            row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA" &&
+			    !(row["Denominació"].includes(".eu") && dataFiVigenciaDret < restarDosMesosExcel(avui));
                     });
 
                     excelFiltrat.forEach((row, index) => {
