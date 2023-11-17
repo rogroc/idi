@@ -90,11 +90,11 @@ await dormir();
                         return {
 			    seccio: item.column0,
                             codi_OEPM: item.column23,
+			    denominacio: item.column1,
                             estat: result.pText,
 			    data_anotacio: result.ultimaData,
                             anotacio: result.anotacio,
-			    data_resolucio: result.data_resolucio,			    
-			    denominacio: item.column1,
+			    data_resolucio: result.data_resolucio,
 			    data_fi_GPG: excelDateToDDMMYYYY(item.column31),
 			    url: result.url_dret
                         };
@@ -198,7 +198,7 @@ console.log(arrayDeVariables);
 }
 
 function dormir() {
-    const tempsEspera = Math.floor(Math.random() * 29000) + 1000;
+    const tempsEspera = Math.floor(Math.random() * 19000) + 1000;
     return new Promise(resolve => setTimeout(resolve, tempsEspera));
 }
     </script>
