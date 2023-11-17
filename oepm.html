@@ -57,8 +57,8 @@
                             row[3] === "Marca" &&
                             row[24] === "Oficina Espanyola de Patents i Marques (OEPM)" &&
                             row[31] < currentDateInExcelFormat &&
-                            row[7] === "Alta" &&
-                            row[0] < 30
+                            row[7] === "Alta" // &&
+                            // row[0] < 30
                         );
                     }).map(row => {
                         return {
@@ -87,12 +87,15 @@
                     async function scrapeAndStoreResults(item) {
                         const result = await webScraping(item.column23);
                         return {
+			    seccio: item.column0,
                             codi_OEPM: item.column23,
                             estat: result.pText,
-                            anotacio: result.lastTdText,
-			    seccio: item.column0,
+			    data_anotacio: result.ultimaData,
+                            anotacio: result.anotacio,
+			    data_resolucio: result.data_resolucio,			    
 			    denominacio: item.column1,
-			    data_fi: excelDateToDDMMYYYY(item.column31)
+			    data_fi_GPG: excelDateToDDMMYYYY(item.column31),
+			    url: result.url_dret
                         };
                     }
 
@@ -130,51 +133,78 @@ XLSX.writeFile(wb, 'dades.xlsx');
             }
         }
 
-        async function webScraping(codi) {
-            const tempsAleatori = await dormir();
+async function webScraping(codi) {
+    const tempsAleatori = await dormir();
 
-            const dataEnFormatAAAAMMDD = "2023/11/02";
-            const url = "https://cors-anywhere.herokuapp.com/https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
-            const response = await fetch(url);
-            const html = await response.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
+    const dataEnFormatAAAAMMDD = "2023/11/02";
+    const url = "https://cors-anywhere.herokuapp.com/https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
+    const response = await fetch(url);
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
 
-            // Cerca l'element <h4> amb el text "Estado:" dins del div amb la classe "div2col"
-            const div2colElements = doc.querySelectorAll('.div2col');
-            let pText = '';
+    // Cerca l'element <h4> amb el text "Estado:" dins del div amb la classe "div2col"
+    const div2colElements = doc.querySelectorAll('.div2col');
+    let pText = '';
 
-            for (const div2colElement of div2colElements) {
-                // CERCA L'ELEMENT "ESTADO"
-                const h4Element = div2colElement.querySelector('h4.noWidth');
+    for (const div2colElement of div2colElements) {
+        // CERCA L'ELEMENT "ESTADO"
+        const h4Element = div2colElement.querySelector('h4.noWidth');
 
-                // Comprova si l'element <h4> conté el text "Estado:"
-                if (h4Element && h4Element.textContent.trim() === "Estado:") {
-                    const pElement = div2colElement.querySelector('p.noWidth');
+        // Comprova si l'element <h4> conté el text "Estado:"
+        if (h4Element && h4Element.textContent.trim() === "Estado:") {
+            const pElement = div2colElement.querySelector('p.noWidth');
 
-                    // Obteniu el contingut de l'element <p>
-                    pText = pElement.textContent.trim();
-                    break; // Sortim del bucle si trobem l'element desitjat
-                }
-            }
-
-            console.log(`Codi: ${codi}, Resultat: ${pText}`);
-
-            // Seleccioneu la taula amb l'atribut role="grid"
-            const tableElement = doc.querySelector('table[role="grid"]');
-
-            if (tableElement) {
-                // Seleccioneu l'últim element <td role="gridcell> dins de la taula
-                const tdElements = tableElement.querySelectorAll('td[role="gridcell"]');
-                const lastTdElement = tdElements[tdElements.length - 1];
-
-                // Obteniu el contingut de l'últim element <td>
-                const lastTdText = lastTdElement.textContent.trim();
-
-                console.log(lastTdText);
-
-                return { pText, lastTdText };
-            }
+            // Obteniu el contingut de l'element <p>
+            pText = pElement.textContent.trim();
+            break; // Sortim del bucle si trobem l'element desitjat
         }
+    }
+
+    console.log(`Codi: ${codi}, Resultat: ${pText}`);
+
+    // Seleccioneu la taula amb l'atribut role="grid"
+    const tableElement = doc.querySelector('table[role="grid"]');
+
+    if (tableElement) {
+        // Seleccioneu l'últim element <td role="gridcell> dins de la taula
+        const tdElements = tableElement.querySelectorAll('td[role="gridcell"]');
+        const lastTdElement = tdElements[tdElements.length - 1];
+        const ultimaData = tdElements[tdElements.length - 2].textContent.trim(); // Afegida aquesta línia
+
+        // Obteniu el contingut de l'últim element <td>
+        const lastTdText = lastTdElement.textContent.trim();
+
+        const url_dret = "https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
+
+const regex1 = /(.*)+\s(\d+\/\d+\/\d+)/;
+
+const anotacio_match1 = lastTdText.match(regex1);
+
+let anotacio, data_resolucio;
+
+if (anotacio_match1 === null) {
+    anotacio = lastTdText;
+    data_resolucio = "";
+} else {
+    anotacio = anotacio_match1[1];
+    data_resolucio = anotacio_match1[2];
+}
+
+console.log("Anotació:", anotacio);
+console.log("Data de resolució:", data_resolucio);
+
+        console.log("Última data:", ultimaData);
+
+        return { pText, anotacio, ultimaData, url_dret, data_resolucio };
+    }
+}
+
+
+function dormir() {
+    const tempsEspera = Math.floor(Math.random() * 9000) + 1000;
+    return new Promise(resolve => setTimeout(resolve, tempsEspera));
+}
+
 
         function dormir() {
             const tempsEspera = Math.floor(Math.random() * 9000) + 1000;
