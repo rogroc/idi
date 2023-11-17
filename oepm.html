@@ -58,7 +58,7 @@
                             row[24] === "Oficina Espanyola de Patents i Marques (OEPM)" &&
                             row[31] < currentDateInExcelFormat &&
                             row[7] === "Alta" // &&
-                            // row[0] < 30
+                            // row[0] < 300
                         );
                     }).map(row => {
                         return {
@@ -85,6 +85,7 @@
 
                     // Defineix una funció asincrònica per fer el web scraping i emmagatzemar els resultats
                     async function scrapeAndStoreResults(item) {
+await dormir();
                         const result = await webScraping(item.column23);
                         return {
 			    seccio: item.column0,
@@ -192,12 +193,12 @@ console.log(arrayDeVariables);
 
         return { pText, anotacio, ultimaData, url_dret, data_resolucio };
 
-	await dormir();
+	// await dormir();
     }
 }
 
 function dormir() {
-    const tempsEspera = Math.floor(Math.random() * 19000) + 1000;
+    const tempsEspera = Math.floor(Math.random() * 29000) + 1000;
     return new Promise(resolve => setTimeout(resolve, tempsEspera));
 }
     </script>
