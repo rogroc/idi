@@ -85,18 +85,18 @@
 
                     // Defineix una funció asincrònica per fer el web scraping i emmagatzemar els resultats
                     async function scrapeAndStoreResults(item) {
-await dormir();
+                        await dormir();
                         const result = await webScraping(item.column23);
                         return {
-			    seccio: item.column0,
+                            seccio: item.column0,
                             codi_OEPM: item.column23,
-			    denominacio: item.column1,
+                            denominacio: item.column1,
                             estat: result.pText,
-			    data_anotacio: result.ultimaData,
+                            data_anotacio: result.ultimaData,
                             anotacio: result.anotacio,
-			    data_resolucio: result.data_resolucio,
-			    data_fi_GPG: excelDateToDDMMYYYY(item.column31),
-			    url: result.url_dret
+                            data_resolucio: result.data_resolucio,
+                            data_fi_GPG: excelDateToDDMMYYYY(item.column31),
+                            url: result.url_dret
                         };
                     }
 
@@ -110,20 +110,17 @@ await dormir();
                             // Converteix l'objecte JSON a una cadena JSON
                             const resultsJSON = JSON.stringify(results);
 
-// Obtenir l'array "marquesOEPM" del JSON original
-// Dades JSON de mostra
-const arrayMarquesOEPM = results.marquesOEPM;
+                            // Obtenir l'array "marquesOEPM" del JSON original
+                            // Dades JSON de mostra
+                            const arrayMarquesOEPM = results.marquesOEPM;
 
-// Crear un objecte de tipus XLSX
-const ws = XLSX.utils.json_to_sheet(arrayMarquesOEPM);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "Dades");
+                            // Crear un objecte de tipus XLSX
+                            const ws = XLSX.utils.json_to_sheet(arrayMarquesOEPM);
+                            const wb = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(wb, ws, "Dades");
 
-// Generar un arxiu XLSX en format de full de càlcul
-XLSX.writeFile(wb, 'dades.xlsx');
-
-
-                            
+                            // Generar un arxiu XLSX en format de full de càlcul
+                            XLSX.writeFile(wb, 'dades.xlsx');
                         })
                         .catch(error => {
                             console.error('ERROR:', error);
@@ -134,8 +131,7 @@ XLSX.writeFile(wb, 'dades.xlsx');
             }
         }
 
-async function webScraping(codi) {
-
+        async function webScraping(codi) {
     const url = "https://cors-anywhere.herokuapp.com/https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
     const response = await fetch(url);
     const html = await response.text();
@@ -154,7 +150,7 @@ async function webScraping(codi) {
             const pElement = div2colElement.querySelector('p.noWidth');
 
             // Obteniu el contingut de l'element <p>
-            pText = pElement.textContent.trim();
+            pText = pElement ? pElement.textContent.trim() : ''; // Comprovació si pElement és nul
             break; // Sortim del bucle si trobem l'element desitjat
         }
     }
@@ -173,34 +169,35 @@ async function webScraping(codi) {
 
         const url_dret = "https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
 
-const regex1 = /(.*)+\s(\d+\/\d+\/\d+)/;
+        const regex1 = /(.*)+\s(\d+\/\d+\/\d+)/;
 
-const anotacio_match1 = lastTdText.match(regex1);
+        const anotacio_match1 = lastTdText.match(regex1);
 
-let anotacio, data_resolucio;
+        let anotacio, data_resolucio;
 
-if (anotacio_match1 === null) {
-    anotacio = lastTdText;
-    data_resolucio = "";
-} else {
-    anotacio = anotacio_match1[1];
-    data_resolucio = anotacio_match1[2];
-}
+        if (anotacio_match1 === null) {
+            anotacio = lastTdText;
+            data_resolucio = "";
+        } else {
+            anotacio = anotacio_match1[1];
+            data_resolucio = anotacio_match1[2];
+        }
 
-const arrayDeVariables = [pText, anotacio, ultimaData, url_dret, data_resolucio];
+        const arrayDeVariables = [pText, anotacio, ultimaData, url_dret, data_resolucio];
 
-console.log(arrayDeVariables);
+        console.log(arrayDeVariables);
 
         return { pText, anotacio, ultimaData, url_dret, data_resolucio };
 
-	// await dormir();
+        // await dormir();
     }
 }
 
-function dormir() {
-    const tempsEspera = Math.floor(Math.random() * 19000) + 1000;
-    return new Promise(resolve => setTimeout(resolve, tempsEspera));
-}
+
+        function dormir() {
+            const tempsEspera = Math.floor(Math.random() * 15000) + 5000;
+            return new Promise(resolve => setTimeout(resolve, tempsEspera));
+        }
     </script>
 </body>
 </html>
