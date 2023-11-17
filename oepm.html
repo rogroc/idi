@@ -134,9 +134,7 @@ XLSX.writeFile(wb, 'dades.xlsx');
         }
 
 async function webScraping(codi) {
-    const tempsAleatori = await dormir();
 
-    const dataEnFormatAAAAMMDD = "2023/11/02";
     const url = "https://cors-anywhere.herokuapp.com/https://consultas2.oepm.es/ceo/jsp/busqueda/consultaExterna.xhtml?numExp=M" + codi;
     const response = await fetch(url);
     const html = await response.text();
@@ -159,8 +157,6 @@ async function webScraping(codi) {
             break; // Sortim del bucle si trobem l'element desitjat
         }
     }
-
-    console.log(`Codi: ${codi}, Resultat: ${pText}`);
 
     // Seleccioneu la taula amb l'atribut role="grid"
     const tableElement = doc.querySelector('table[role="grid"]');
@@ -190,17 +186,18 @@ if (anotacio_match1 === null) {
     data_resolucio = anotacio_match1[2];
 }
 
-console.log("Anotació:", anotacio);
-console.log("Data de resolució:", data_resolucio);
+const arrayDeVariables = [pText, anotacio, ultimaData, url_dret, data_resolucio];
 
-        console.log("Última data:", ultimaData);
+console.log(arrayDeVariables);
 
         return { pText, anotacio, ultimaData, url_dret, data_resolucio };
+
+	await dormir();
     }
 }
 
 function dormir() {
-    const tempsEspera = Math.floor(Math.random() * 9000) + 1000;
+    const tempsEspera = Math.floor(Math.random() * 19000) + 1000;
     return new Promise(resolve => setTimeout(resolve, tempsEspera));
 }
     </script>
