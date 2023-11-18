@@ -189,15 +189,19 @@
 
         return { pText, anotacio, ultimaData, url_dret, data_resolucio };
 
-        // await dormir();
-    }
+        
 }
+await dormir();
+    }
 
 
-        function dormir() {
-            const tempsEspera = Math.floor(Math.random() * 15000) + 5000;
-            return new Promise(resolve => setTimeout(resolve, tempsEspera));
-        }
+
+   // Funció per generar un temps d'espera aleatori
+    function dormir() {
+        const tempsEspera = Math.floor(Math.random() * 10000) + 5000;
+        return new Promise(resolve => setTimeout(resolve, tempsEspera));
+    }
+
     </script>
 </body>
 </html>
