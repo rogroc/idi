@@ -139,6 +139,8 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio) {
 
         if (disponible === "yes") {
             estat = "Baixa";
+	} else if (disponible === "incorrect") {
+            estat = "Nom de domini incorrecte";
         } else if (dataCaducitat === "") {
             estat = "Falta informació";
         } else if (convertirDataExcel(dataCreacio) !== convertirDataExcel(creacio)) {
