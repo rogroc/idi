@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processament d'arxiu XLSX</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <input type="file" id="fileInput" accept=".xlsx">
+    <button onclick="processFile()">Processar Arxiu</button>
+
+    <script>
+        function transposeData(groupedData) {
+            const newData = [];
+            
+            for (const key in groupedData) {
+                const group = groupedData[key];
+                const transposedEntry = {};
+
+                // Afegim "Número d'inventari" i "Data de modificació" primer
+                transposedEntry['Número d\'inventari'] = group[0]['Número d\'inventari'];
+                transposedEntry['Data de modificació'] = group[0]['Data de modificació'];
+                transposedEntry['Titular'] = group[0]['Titular'];
+                transposedEntry['Família'] = group[0]['Família'];
+                transposedEntry['Catàleg'] = group[0]['Catàleg'];
+                transposedEntry['Nom del Element d\'inventari'] = group[0]['Nom del Element d\'inventari'];
+                transposedEntry['Usuari'] = group[0]['Usuari'];
+                transposedEntry['Departament usuari'] = group[0]['Departament'];
+
+                // Afegim la resta de columnes
+                group.forEach(entry => {
+                    const modifiedField = entry['Camp modificat'];
+                    const currentValue = entry['Valor actual'];
+                    transposedEntry[modifiedField] = currentValue;
+                });
+
+                newData.push(transposedEntry);
+            }
+
+            return newData;
+        }
+
+        function processFile() {
+            const input = document.getElementById('fileInput');
+            const file = input.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet_name_list = workbook.SheetNames;
+                    const sheet = workbook.Sheets[sheet_name_list[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                    // Agrupem les dades segons "Data de modificació" i "Número d'inventari"
+                    const groupedData = {};
+                    jsonData.forEach(entry => {
+                        const key = `${entry['Data de modificació']} - ${entry['Número d\'inventari']}`;
+                        if (!groupedData[key]) {
+                            groupedData[key] = [];
+                        }
+                        groupedData[key].push(entry);
+                    });
+
+                    // Transposar les dades i afegir "Número d'inventari" i "Data de modificació" com a primeres columnes
+                    const transposedData = transposeData(groupedData);
+
+                    // Creem un nou full de càlcul amb les dades transposades
+                    const ws = XLSX.utils.json_to_sheet(transposedData);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Dades Processades');
+
+                    // Descarreguem automàticament el fitxer XLSX amb els resultats
+                    XLSX.writeFile(wb, 'dades_processades.xlsx');
+                };
+
+                reader.readAsArrayBuffer(file);
+            } else {
+                console.error('No s\'ha seleccionat cap arxiu.');
+            }
+        }
+    </script>
+</body>
+</html>
