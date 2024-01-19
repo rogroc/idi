@@ -178,15 +178,15 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio, ti
 
             const dataTableJSON = data.map(row => ({
                 Domini: row[0],
-		Titular: row[9],
-                Disponibilitat: row[1],
-                DataVencimentWhois: row[2],
-                DataVencimentGPG: row[3],
-                DataCreacioWhois: row[4],
-		DataCreacioGPG: row[5],
-                OrganitzacioRegistrant: row[6],
-		WebAgent: row[7],
-                Estat: row[8]
+		Titular: row[1],
+                Disponibilitat: row[2],
+                DataVencimentWhois: row[3],
+                DataVencimentGPG: row[4],
+                DataCreacioWhois: row[5],
+		DataCreacioGPG: row[6],
+                OrganitzacioRegistrant: row[7],
+		WebAgent: row[8],
+                Estat: row[9]
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataTableJSON);
