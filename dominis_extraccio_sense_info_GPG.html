@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -73,6 +74,7 @@ async function consultarWHOIS(domini, resultatContenidor) {
         let organitzacioRegistrant = "";
         let website = "";
         let estat = "";
+let idDomini = "";
         let trobatCreacio = false;
         let trobatWebsite = false;
 
@@ -81,6 +83,9 @@ async function consultarWHOIS(domini, resultatContenidor) {
             linies.forEach(linea => {
                 if (linea.includes("Registry Expiry Date:")) {
                     dataCaducitat = linea.split(":")[1].trim().split("T")[0];
+                }
+                if (linea.includes("Domain ID:")) {
+                    idDomini = linea.split(":")[1].trim();
                 }
                 if (!trobatCreacio && linea.includes("Creation Date:")) {
                     dataCreacio = linea.split(":")[1].trim().split("T")[0];
@@ -108,7 +113,7 @@ async function consultarWHOIS(domini, resultatContenidor) {
         }
 
         const table = $('#resultatTaula').DataTable();
-        const rowData = [domini, disponible, dataCaducitat.split("-").reverse().join("-"), dataCreacio.split("-").reverse().join("-"), organitzacioRegistrant, website, estat];
+        const rowData = [domini, disponible, dataCaducitat.split("-").reverse().join("-"), dataCreacio.split("-").reverse().join("-"), organitzacioRegistrant, website, idDomini, estat];
 
         // Assegura't que la fila té els elements necessaris
         while (rowData.length < table.columns().header().length) {
@@ -144,7 +149,8 @@ async function consultarWHOIS(domini, resultatContenidor) {
                 DataCreacioWhois: row[3],
                 OrganitzacioRegistrant: row[4],
                 WebAgent: row[5],
-                Estat: row[6]
+		idDomini: row[6],
+                Estat: row[7]
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataTableJSON);
@@ -172,6 +178,7 @@ async function consultarWHOIS(domini, resultatContenidor) {
                     <th>Data creació Whois</th>
                     <th>Organització registrant</th>
                     <th>Web agent</th>
+		    <th>ID Domini</th>
                     <th>Estat</th>
                 </tr>
             </thead>
