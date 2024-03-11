@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -123,6 +122,15 @@ let idDomini = "";
         table.row.add(rowData).draw();
     } catch (error) {
         resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
+const rowData = [domini, "", "", "", "", "", "", "Error de WHOIS"];
+
+        // Assegura't que la fila té els elements necessaris
+        while (rowData.length < table.columns().header().length) {
+            rowData.push("");
+        }
+
+        table.row.add(rowData).draw();
+	
     }
 }
 
