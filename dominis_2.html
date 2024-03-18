@@ -61,22 +61,21 @@ console.log(convertirDataExcelANormal(restarDosMesosExcel(avui)));
                         range: 13
                     });
 
-                    excelFiltrat = fullData.filter(row => {
-        const dataFiVigenciaDret = row["Data fi vigència dret"];
-        return row["Catàleg d'inventari"] === "Nom de domini" &&
-            row["Estat"] === "Alta" &&
-            dataFiVigenciaDret < avui &&
-            (filtreCTTI === "False" || (row["Gestionat pel CTTI"] !== "Si")) &&  // Aplicar la condició només si la casella de selecció està marcada
-
-                            row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA" &&
-			    !(
+excelFiltrat = fullData.filter(row => {
+    const dataFiVigenciaDret = row["Data fi vigència dret"];
+    return row["Catàleg d'inventari"] === "Nom de domini" &&
+        row["Estat"] === "Alta" &&
+        dataFiVigenciaDret < avui &&
+        ((filtreCTTI && row["Gestionat pel CTTI"] === "Si") || (!filtreCTTI && row["Gestionat pel CTTI"] === "No")) &&
+        row["Titular (entitat)"] !== "Corporació Catalana de Mitjans Audiovisuals, SA" &&
+        !(
             (row["Denominació"].includes(".eu") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
             (row["Denominació"].includes(".it") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
             (row["Denominació"].includes(".de") && dataFiVigenciaDret > restarDosMesosExcel(avui)) ||
             (row["Denominació"].includes(".fr") && dataFiVigenciaDret > restarDosMesosExcel(avui))
             // Afegir més condicions si és necessari
         ); 
-                    });
+});
 
                     excelFiltrat.forEach((row, index) => {
                         if (row) {
