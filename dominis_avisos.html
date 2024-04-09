@@ -187,7 +187,7 @@ async function consultarWHOIS(domini, resultatContenidor, caducitat, creacio, ti
             const ws = XLSX.utils.json_to_sheet(dataTableJSON);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Dades");
-            XLSX.writeFile(wb, 'dades.xlsx');
+            XLSX.writeFile(wb, 'whois_notificacions.xlsx');
         }
 
     </script>
