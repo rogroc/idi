@@ -23,8 +23,7 @@
             const dia = data.getDate().toString().padStart(2, '0');
             const mes = (data.getMonth() + 1).toString().padStart(2, '0');
             const any = data.getFullYear();
-            const dataAmbHora = `${any}-${mes}-${dia}`;
-            return dataAmbHora;
+            return `${any}-${mes}-${dia}`;
         }
 
         function carregarArxiu() {
@@ -43,7 +42,7 @@
                     // Ara assignem el valor a la variable global
                     fullData = XLSX.utils.sheet_to_json(excel.Sheets[excel.SheetNames[0]]);
 
-                    fullData.forEach((row, index) => {
+                    fullData.forEach((row) => {
                         if (row) {
                             const resultatContenidor = document.createElement("div");
                             document.body.appendChild(resultatContenidor);
@@ -62,77 +61,82 @@
             input.click();
         }
 
-async function consultarWHOIS(domini, resultatContenidor) {
-    try {
-        const response = await fetch('https://api.whois.vu/?q=' + domini);
-        const informacioWHOIS = await response.json();
-        const disponible = informacioWHOIS.available;
-        const whois = informacioWHOIS.whois;
-        let dataCaducitat = "";
-        let dataCreacio = "";
-        let organitzacioRegistrant = "";
-        let website = "";
-        let estat = "";
-let idDomini = "";
-        let trobatCreacio = false;
-        let trobatWebsite = false;
+        async function consultarWHOIS(domini, resultatContenidor) {
+            try {
+                const response = await fetch('https://api.whois.vu/?q=' + domini);
+                const informacioWHOIS = await response.json();
 
-        if (whois) {
-            const linies = whois.split("\n");
-            linies.forEach(linea => {
-                if (linea.includes("Registry Expiry Date:")) {
-                    dataCaducitat = linea.split(":")[1].trim().split("T")[0];
+                if (!informacioWHOIS || informacioWHOIS.error) {
+                    throw new Error("Domini inexistent");
                 }
-                if (linea.includes("Domain ID:")) {
-                    idDomini = linea.split(":")[1].trim();
+
+                const disponible = informacioWHOIS.available;
+                const whois = informacioWHOIS.whois;
+                let dataCaducitat = "";
+                let dataCreacio = "";
+                let organitzacioRegistrant = "";
+                let website = "";
+                let estat = "";
+                let idDomini = "";
+                let trobatCreacio = false;
+                let trobatWebsite = false;
+
+                if (whois) {
+                    const linies = whois.split("\n");
+                    linies.forEach(linea => {
+                        if (linea.includes("Registry Expiry Date:")) {
+                            dataCaducitat = linea.split(":")[1].trim().split("T")[0];
+                        }
+                        if (linea.includes("Domain ID:")) {
+                            idDomini = linea.split(":")[1].trim();
+                        }
+                        if (!trobatCreacio && linea.includes("Creation Date:")) {
+                            dataCreacio = linea.split(":")[1].trim().split("T")[0];
+                            trobatCreacio = true;
+                        }
+                        if (linea.includes("Registrant Organization:")) {
+                            organitzacioRegistrant = linea.split(":")[1].trim();
+                        }
+                        if (!trobatWebsite && (linea.includes("Website:") || linea.includes("Registrar URL:"))) {
+                            website = linea.split(": ")[1].trim();
+                            trobatWebsite = true;
+                        }
+                    });
                 }
-                if (!trobatCreacio && linea.includes("Creation Date:")) {
-                    dataCreacio = linea.split(":")[1].trim().split("T")[0];
-                    trobatCreacio = true;
+
+                // Creació del camp "Estat"
+                if (disponible === "yes") {
+                    estat = "No registrat";
+                } else if (disponible === "incorrect") {
+                    estat = "Nom de domini incorrecte";
+                } else if (dataCaducitat === "") {
+                    estat = "Falta informació";
+                } else {
+                    estat = "Ok";
                 }
-                if (linea.includes("Registrant Organization:")) {
-                    organitzacioRegistrant = linea.split(":")[1].trim();
+
+                const table = $('#resultatTaula').DataTable();
+                const rowData = [domini, disponible, dataCaducitat.split("-").reverse().join("-"), dataCreacio.split("-").reverse().join("-"), organitzacioRegistrant, website, idDomini, estat];
+
+                // Assegura't que la fila té els elements necessaris
+                while (rowData.length < table.columns().header().length) {
+                    rowData.push("");
                 }
-                if (!trobatWebsite && (linea.includes("Website:") || linea.includes("Registrar URL:"))) {
-                    website = linea.split(": ")[1].trim();
-                    trobatWebsite = true;
+
+                table.row.add(rowData).draw();
+            } catch (error) {
+                const table = $('#resultatTaula').DataTable();
+                const rowData = [domini, "", "", "", "", "", "", "Domini inexistent"];
+
+                // Assegura't que la fila té els elements necessaris
+                while (rowData.length < table.columns().header().length) {
+                    rowData.push("");
                 }
-            });
+
+                table.row.add(rowData).draw();
+                resultatContenidor.innerText = "Error en obtenir la informació WHOIS: " + error.message;
+            }
         }
-        
-        // Creació del camp "Estat"
-        if (disponible === "yes") {
-            estat = "No registrat";
-        } else if (disponible === "incorrect") {
-            estat = "Nom de domini incorrecte";
-        } else if (dataCaducitat === "") {
-            estat = "Falta informació";
-        } else {
-            estat = "Ok";
-        }
-
-        const table = $('#resultatTaula').DataTable();
-        const rowData = [domini, disponible, dataCaducitat.split("-").reverse().join("-"), dataCreacio.split("-").reverse().join("-"), organitzacioRegistrant, website, idDomini, estat];
-
-        // Assegura't que la fila té els elements necessaris
-        while (rowData.length < table.columns().header().length) {
-            rowData.push("");
-        }
-
-        table.row.add(rowData).draw();
-    } catch (error) {
-        resultatContenidor.innerText = "Error en obtenir la informació WHOIS.";
-const rowData = [domini, "", "", "", "", "", "", "Error de WHOIS"];
-
-        // Assegura't que la fila té els elements necessaris
-        while (rowData.length < table.columns().header().length) {
-            rowData.push("");
-        }
-
-        table.row.add(rowData).draw();
-	
-    }
-}
 
         async function mostrarAvis() {
             const table = $('#resultatTaula').DataTable();
@@ -157,7 +161,7 @@ const rowData = [domini, "", "", "", "", "", "", "Error de WHOIS"];
                 DataCreacioWhois: row[3],
                 OrganitzacioRegistrant: row[4],
                 WebAgent: row[5],
-		idDomini: row[6],
+                idDomini: row[6],
                 Estat: row[7]
             }));
 
@@ -186,7 +190,7 @@ const rowData = [domini, "", "", "", "", "", "", "Error de WHOIS"];
                     <th>Data creació Whois</th>
                     <th>Organització registrant</th>
                     <th>Web agent</th>
-		    <th>ID Domini</th>
+                    <th>ID Domini</th>
                     <th>Estat</th>
                 </tr>
             </thead>
